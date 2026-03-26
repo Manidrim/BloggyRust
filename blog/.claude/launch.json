@@ -1,0 +1,31 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Frontend (Vite)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 5173,
+      "cwd": "frontend"
+    },
+    {
+      "name": "Backend (Rust/Axum)",
+      "runtimeExecutable": "cargo",
+      "runtimeArgs": ["run"],
+      "port": 8080,
+      "cwd": "backend"
+    },
+    {
+      "name": "Database (PostgreSQL)",
+      "runtimeExecutable": "docker",
+      "runtimeArgs": ["compose", "up", "db"],
+      "port": 5432
+    },
+    {
+      "name": "Full Stack (Docker Compose)",
+      "runtimeExecutable": "docker",
+      "runtimeArgs": ["compose", "up", "--build"],
+      "port": 3000
+    }
+  ]
+}

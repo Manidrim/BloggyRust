@@ -1,0 +1,24 @@
+# Environment
+.env
+
+# Rust
+target/
+**/*.rs.bk
+Cargo.lock
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# SQLx offline cache (committer si vous utilisez SQLX_OFFLINE=true)
+# .sqlx/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
