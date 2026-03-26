@@ -1,0 +1,90 @@
+# Agent Guide — BloggY
+
+Ce fichier est le **point d'entrée** pour tout agent AI travaillant sur ce projet.
+Il référence la documentation détaillée dans le dossier `agent/`.
+
+---
+
+## Qu'est-ce que BloggY ?
+
+BloggY est un **blog full-stack** avec :
+- Backend **Rust/Axum** — API REST avec authentification JWT
+- Frontend **React/TypeScript** — SPA avec React Router
+- Base de données **PostgreSQL 16**
+- Déploiement **Docker Compose** (3 services : frontend, backend, db)
+
+Chemin du code source : `blog/`
+
+---
+
+## Documentation disponible
+
+| Fichier | Contenu |
+|---------|---------|
+| [`agent/structure.md`](agent/structure.md) | Arborescence complète du projet, règles de navigation |
+| [`agent/technologies.md`](agent/technologies.md) | Stack technique, versions, ports |
+| [`agent/architecture.md`](agent/architecture.md) | Patterns architecturaux, flux de données, schéma DB |
+| [`agent/configuration.md`](agent/configuration.md) | Variables d'environnement, Docker, Nginx, Vite, Cargo |
+| [`agent/api.md`](agent/api.md) | Tous les endpoints REST, auth JWT, format des erreurs |
+| [`agent/database.md`](agent/database.md) | Schéma SQL, repositories, patterns de requêtes |
+| [`agent/conventions.md`](agent/conventions.md) | Conventions de nommage et de code (inspirées Clean Code) |
+| [`agent/getting-started.md`](agent/getting-started.md) | Comment lancer, builder, créer un admin |
+| [`agent/known-issues.md`](agent/known-issues.md) | Problèmes connus, dette technique, améliorations prioritaires |
+
+---
+
+## Guide de navigation rapide
+
+### "Je veux modifier un endpoint API"
+→ Handler : `blog/backend/src/handlers/<entité>_handler.rs`
+→ Route : `blog/backend/src/routes/mod.rs`
+→ Documentation : [`agent/api.md`](agent/api.md)
+
+### "Je veux modifier une requête SQL"
+→ `blog/backend/src/repositories/<entité>_repository.rs`
+→ Documentation : [`agent/database.md`](agent/database.md)
+
+### "Je veux modifier l'interface utilisateur"
+→ Pages : `blog/frontend/src/pages/`
+→ Composants : `blog/frontend/src/components/`
+→ Appels API : `blog/frontend/src/api/`
+
+### "Je veux modifier la configuration"
+→ Variables d'env : `blog/.env` (ou `.env.example`)
+→ Docker : `blog/docker-compose.yml`
+→ Documentation : [`agent/configuration.md`](agent/configuration.md)
+
+### "Je veux ajouter une nouvelle entité"
+Ordre de création :
+1. Migration SQL dans `blog/migrations/`
+2. Model Rust dans `blog/backend/src/models/`
+3. Repository Rust dans `blog/backend/src/repositories/`
+4. Handler Rust dans `blog/backend/src/handlers/`
+5. Route dans `blog/backend/src/routes/mod.rs`
+6. Type TypeScript dans `blog/frontend/src/types/index.ts`
+7. Fonctions API dans `blog/frontend/src/api/`
+8. Composants/pages React
+
+---
+
+## Points d'attention
+
+> **Sécurité** — `ArticlePage.tsx` utilise `dangerouslySetInnerHTML` sans sanitisation. Tout contenu HTML dans les articles est un risque XSS potentiel.
+
+> **Performance** — `ArticleRepository::find_all_published()` a un problème N+1 : une requête supplémentaire est faite par article pour récupérer ses tags. À corriger avant mise à l'échelle.
+
+> **Tests** — Le projet n'a **aucun test**. Toute modification doit être vérifiée manuellement.
+
+> **SQLx offline** — Si la base de données n'est pas accessible lors du build Rust, utiliser `SQLX_OFFLINE=true` et s'assurer que le cache `.sqlx/` est à jour.
+
+---
+
+## Conventions essentielles
+
+- **Rust** : `snake_case` pour tout sauf types (`PascalCase`) et constantes (`SCREAMING_SNAKE_CASE`)
+- **TypeScript/React** : composants en `PascalCase`, fonctions en `camelCase`
+- **Erreurs Rust** : toujours utiliser `AppError` et `AppResult<T>`
+- **Appels API frontend** : toujours passer par `src/api/`, jamais Axios directement
+- **Requêtes SQL** : toujours utiliser des paramètres liés (`$1`, `$2`), jamais de concaténation
+
+Pour les conventions détaillées : [`agent/conventions.md`](agent/conventions.md)
