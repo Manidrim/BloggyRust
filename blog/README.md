@@ -139,3 +139,4 @@ Après inscription via `/auth/register`, passez `is_admin = true` directement en
 ```sql
 UPDATE users SET is_admin = TRUE WHERE email = 'votre@email.com';
 ```
+
