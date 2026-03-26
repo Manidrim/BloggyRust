@@ -67,6 +67,17 @@ Ordre de création :
 
 ---
 
+## ⚠️ Règle impérative : mise à jour de la documentation
+
+> **OBLIGATOIRE** — À chaque fois qu'un agent effectue une modification dans le projet (ajout, suppression, déplacement ou renommage de fichiers, changement d'architecture, modification d'un endpoint, ajout d'une entité, etc.), il **DOIT** mettre à jour la documentation correspondante. Cela inclut :
+>
+> - **`agent.md`** (ce fichier) si la modification impacte la structure générale, les conventions ou les points d'attention.
+> - **Les fichiers du dossier `agent/`** (`structure.md`, `api.md`, `database.md`, `architecture.md`, etc.) si la modification concerne leur périmètre respectif.
+>
+> La documentation n'est utile que si elle reflète l'état réel du code. Une modification sans mise à jour de la documentation est considérée comme **incomplète**. L'agent doit traiter la mise à jour documentaire comme une étape à part entière de chaque tâche, au même titre que le code lui-même.
+
+---
+
 ## Points d'attention
 
 > **Sécurité** — `ArticlePage.tsx` utilise `dangerouslySetInnerHTML` sans sanitisation. Tout contenu HTML dans les articles est un risque XSS potentiel.
