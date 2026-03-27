@@ -99,6 +99,7 @@ mod tests {
 
     #[test]
     fn create_jwt_produces_decodable_token_with_correct_claims() {
+        use std::time::{SystemTime, UNIX_EPOCH};
         let user_id = Uuid::new_v4();
         let secret = "test_secret_key";
 
@@ -106,8 +107,16 @@ mod tests {
             .expect("JWT creation should succeed");
 
         let key = DecodingKey::from_secret(secret.as_bytes());
-        let decoded = decode::<JwtClaims>(&token, &key, &Validation::default())
+        let mut validation = Validation::default();
+        validation.validate_exp = false;
+        let decoded = decode::<JwtClaims>(&token, &key, &validation)
             .expect("JWT decoding should succeed");
+
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as usize;
+        assert!(decoded.claims.exp > now, "exp should be set in the future");
 
         assert_eq!(decoded.claims.sub, user_id);
         assert_eq!(decoded.claims.username, "alice");
@@ -116,6 +125,7 @@ mod tests {
 
     #[test]
     fn create_jwt_with_different_secret_fails_to_decode() {
+        use jsonwebtoken::errors::ErrorKind;
         let user_id = Uuid::new_v4();
         let token = create_jwt(user_id, "bob", false, "secret_a")
             .expect("JWT creation should succeed");
@@ -123,7 +133,10 @@ mod tests {
         let key = DecodingKey::from_secret("secret_b".as_bytes());
         let result = decode::<JwtClaims>(&token, &key, &Validation::default());
 
-        assert!(result.is_err());
+        assert!(
+            matches!(result.unwrap_err().kind(), ErrorKind::InvalidSignature),
+            "expected InvalidSignature error when using a different secret"
+        );
     }
 
     #[test]
@@ -134,7 +147,9 @@ mod tests {
             .expect("JWT creation should succeed");
 
         let key = DecodingKey::from_secret(secret.as_bytes());
-        let decoded = decode::<JwtClaims>(&token, &key, &Validation::default())
+        let mut validation = Validation::default();
+        validation.validate_exp = false;
+        let decoded = decode::<JwtClaims>(&token, &key, &validation)
             .expect("JWT decoding should succeed");
 
         assert!(!decoded.claims.is_admin);
