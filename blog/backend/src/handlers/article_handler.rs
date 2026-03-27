@@ -124,6 +124,11 @@ fn validate_create_payload(payload: &CreateArticleRequest) -> AppResult<()> {
 }
 
 /// Converts a title into a URL-friendly slug.
+///
+/// Non-alphanumeric characters are replaced with hyphens, consecutive hyphens
+/// are collapsed, and the result is lowercased. Unicode alphanumeric characters
+/// (e.g. accented letters like `é`, `ü`) are intentionally preserved — they are
+/// valid in URLs per RFC 3986 and are kept to avoid lossy transliteration.
 fn slugify(title: &str) -> String {
     title
         .to_lowercase()
