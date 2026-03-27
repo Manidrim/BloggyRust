@@ -92,3 +92,72 @@ fn verify_password(password: &str, hash: &str) -> AppResult<()> {
         .verify_password(password.as_bytes(), &parsed_hash)
         .map_err(|_| AppError::Unauthorized)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::user::RegisterRequest;
+
+    fn valid_payload() -> RegisterRequest {
+        RegisterRequest {
+            username: "alice".to_string(),
+            email: "alice@example.com".to_string(),
+            password: "securepassword".to_string(),
+        }
+    }
+
+    // --- validate_register_payload ---
+
+    #[test]
+    fn validate_register_rejects_empty_username() {
+        let payload = RegisterRequest {
+            username: "   ".to_string(),
+            ..valid_payload()
+        };
+        let result = validate_register_payload(&payload);
+        assert!(matches!(result, Err(AppError::BadRequest(_))));
+    }
+
+    #[test]
+    fn validate_register_rejects_short_password() {
+        let payload = RegisterRequest {
+            password: "short".to_string(),
+            ..valid_payload()
+        };
+        let result = validate_register_payload(&payload);
+        assert!(matches!(result, Err(AppError::BadRequest(_))));
+    }
+
+    #[test]
+    fn validate_register_rejects_invalid_email() {
+        let payload = RegisterRequest {
+            email: "not-an-email".to_string(),
+            ..valid_payload()
+        };
+        let result = validate_register_payload(&payload);
+        assert!(matches!(result, Err(AppError::BadRequest(_))));
+    }
+
+    #[test]
+    fn validate_register_accepts_valid_payload() {
+        let result = validate_register_payload(&valid_payload());
+        assert!(result.is_ok());
+    }
+
+    // --- hash_password / verify_password ---
+
+    #[test]
+    fn password_round_trip_succeeds() {
+        let password = "my_secure_password";
+        let hash = hash_password(password).expect("hashing should succeed");
+        let result = verify_password(password, &hash);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn wrong_password_returns_unauthorized() {
+        let hash = hash_password("correct_password").expect("hashing should succeed");
+        let result = verify_password("wrong_password", &hash);
+        assert!(matches!(result, Err(AppError::Unauthorized)));
+    }
+}
