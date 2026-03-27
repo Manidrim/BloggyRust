@@ -115,7 +115,7 @@ mod tests {
             ..valid_payload()
         };
         let result = validate_register_payload(&payload);
-        assert!(matches!(result, Err(AppError::BadRequest(_))));
+        assert!(matches!(result, Err(AppError::BadRequest(ref msg)) if msg.to_lowercase().contains("username")));
     }
 
     #[test]
@@ -125,7 +125,7 @@ mod tests {
             ..valid_payload()
         };
         let result = validate_register_payload(&payload);
-        assert!(matches!(result, Err(AppError::BadRequest(_))));
+        assert!(matches!(result, Err(AppError::BadRequest(ref msg)) if msg.to_lowercase().contains("password")));
     }
 
     #[test]
@@ -135,12 +135,32 @@ mod tests {
             ..valid_payload()
         };
         let result = validate_register_payload(&payload);
-        assert!(matches!(result, Err(AppError::BadRequest(_))));
+        assert!(matches!(result, Err(AppError::BadRequest(ref msg)) if msg.to_lowercase().contains("email")));
     }
 
     #[test]
     fn validate_register_accepts_valid_payload() {
         let result = validate_register_payload(&valid_payload());
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn validate_register_rejects_password_of_7_chars() {
+        let payload = RegisterRequest {
+            password: "1234567".to_string(), // exactly 7 chars — below the 8-char minimum
+            ..valid_payload()
+        };
+        let result = validate_register_payload(&payload);
+        assert!(matches!(result, Err(AppError::BadRequest(_))));
+    }
+
+    #[test]
+    fn validate_register_accepts_password_of_8_chars() {
+        let payload = RegisterRequest {
+            password: "12345678".to_string(), // exactly 8 chars — at the minimum
+            ..valid_payload()
+        };
+        let result = validate_register_payload(&payload);
         assert!(result.is_ok());
     }
 
