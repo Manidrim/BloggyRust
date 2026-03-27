@@ -91,3 +91,53 @@ pub fn create_jwt(
         &EncodingKey::from_secret(secret.as_bytes()),
     )
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use jsonwebtoken::{decode, DecodingKey, Validation};
+
+    #[test]
+    fn create_jwt_produces_decodable_token_with_correct_claims() {
+        let user_id = Uuid::new_v4();
+        let secret = "test_secret_key";
+
+        let token = create_jwt(user_id, "alice", true, secret)
+            .expect("JWT creation should succeed");
+
+        let key = DecodingKey::from_secret(secret.as_bytes());
+        let decoded = decode::<JwtClaims>(&token, &key, &Validation::default())
+            .expect("JWT decoding should succeed");
+
+        assert_eq!(decoded.claims.sub, user_id);
+        assert_eq!(decoded.claims.username, "alice");
+        assert!(decoded.claims.is_admin);
+    }
+
+    #[test]
+    fn create_jwt_with_different_secret_fails_to_decode() {
+        let user_id = Uuid::new_v4();
+        let token = create_jwt(user_id, "bob", false, "secret_a")
+            .expect("JWT creation should succeed");
+
+        let key = DecodingKey::from_secret("secret_b".as_bytes());
+        let result = decode::<JwtClaims>(&token, &key, &Validation::default());
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn create_jwt_non_admin_claim_is_preserved() {
+        let user_id = Uuid::new_v4();
+        let secret = "test_secret";
+        let token = create_jwt(user_id, "bob", false, secret)
+            .expect("JWT creation should succeed");
+
+        let key = DecodingKey::from_secret(secret.as_bytes());
+        let decoded = decode::<JwtClaims>(&token, &key, &Validation::default())
+            .expect("JWT decoding should succeed");
+
+        assert!(!decoded.claims.is_admin);
+        assert_eq!(decoded.claims.username, "bob");
+    }
+}
