@@ -47,12 +47,22 @@ test("affiche le tag de l'article", () => {
 
 test("le lien du titre pointe vers le bon slug", () => {
   renderCard();
-  const links = screen.getAllByRole("link");
-  const titleLink = links.find((l) => l.getAttribute("href") === "/articles/mon-premier-article");
-  expect(titleLink).toBeInTheDocument();
+  const titleLink = screen.getByRole("link", { name: "Mon premier article" });
+  expect(titleLink).toHaveAttribute("href", "/articles/mon-premier-article");
 });
 
 test("n'affiche pas de tags quand la liste est vide", () => {
   renderCard({ ...mockArticle, tags: [] });
   expect(screen.queryByText("Rust")).not.toBeInTheDocument();
+});
+
+test("affiche le nom de l'auteur", () => {
+  renderCard();
+  expect(screen.getByText("alice")).toBeInTheDocument();
+});
+
+test('affiche le lien "Lire l\'article" vers le bon slug', () => {
+  renderCard();
+  const readMoreLink = screen.getByRole("link", { name: /lire l'article/i });
+  expect(readMoreLink).toHaveAttribute("href", "/articles/mon-premier-article");
 });
