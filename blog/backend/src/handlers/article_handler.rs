@@ -135,3 +135,111 @@ fn slugify(title: &str) -> String {
         .collect::<Vec<_>>()
         .join("-")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        middleware::auth::AuthenticatedUser,
+        models::article::CreateArticleRequest,
+    };
+    use uuid::Uuid;
+
+    fn admin_user() -> AuthenticatedUser {
+        AuthenticatedUser {
+            id: Uuid::new_v4(),
+            username: "admin".to_string(),
+            is_admin: true,
+        }
+    }
+
+    fn regular_user() -> AuthenticatedUser {
+        AuthenticatedUser {
+            id: Uuid::new_v4(),
+            username: "user".to_string(),
+            is_admin: false,
+        }
+    }
+
+    // --- slugify ---
+
+    #[test]
+    fn slugify_lowercases_and_replaces_spaces() {
+        assert_eq!(slugify("Hello World"), "hello-world");
+    }
+
+    #[test]
+    fn slugify_collapses_multiple_separators() {
+        assert_eq!(slugify("Hello  --  World"), "hello-world");
+    }
+
+    #[test]
+    fn slugify_removes_special_characters() {
+        // é est alphanumeric en Rust (Unicode), donc conservé tel quel
+        assert_eq!(slugify("C'est l'été !"), "c-est-l-été");
+    }
+
+    #[test]
+    fn slugify_preserves_numbers() {
+        assert_eq!(slugify("Article 42"), "article-42");
+    }
+
+    #[test]
+    fn slugify_empty_string_returns_empty() {
+        assert_eq!(slugify(""), "");
+    }
+
+    // --- validate_create_payload ---
+
+    #[test]
+    fn validate_create_rejects_empty_title() {
+        let payload = CreateArticleRequest {
+            title: "   ".to_string(),
+            content: "some content".to_string(),
+            excerpt: None,
+            published: None,
+            tag_ids: None,
+        };
+        let result = validate_create_payload(&payload);
+        assert!(matches!(result, Err(AppError::BadRequest(ref msg)) if msg.to_lowercase().contains("title")));
+    }
+
+    #[test]
+    fn validate_create_rejects_empty_content() {
+        let payload = CreateArticleRequest {
+            title: "My Title".to_string(),
+            content: "   ".to_string(),
+            excerpt: None,
+            published: None,
+            tag_ids: None,
+        };
+        let result = validate_create_payload(&payload);
+        assert!(matches!(result, Err(AppError::BadRequest(ref msg)) if msg.to_lowercase().contains("content")));
+    }
+
+    #[test]
+    fn validate_create_accepts_valid_payload() {
+        let payload = CreateArticleRequest {
+            title: "My Title".to_string(),
+            content: "Some content".to_string(),
+            excerpt: None,
+            published: None,
+            tag_ids: None,
+        };
+        let result = validate_create_payload(&payload);
+        assert!(result.is_ok());
+    }
+
+    // --- require_admin ---
+
+    #[test]
+    fn require_admin_allows_admin_user() {
+        assert!(require_admin(&admin_user()).is_ok());
+    }
+
+    #[test]
+    fn require_admin_rejects_regular_user() {
+        let result = require_admin(&regular_user());
+        assert!(matches!(result, Err(AppError::Forbidden)));
+    }
+}
