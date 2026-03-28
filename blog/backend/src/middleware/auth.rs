@@ -4,7 +4,10 @@ use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation}
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::{error::AppError, AppState};
+use crate::{
+    error::{AppError, AppResult},
+    AppState,
+};
 
 /// Claims embedded in a JWT token.
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -26,6 +29,17 @@ pub struct AuthenticatedUser {
     pub id: Uuid,
     pub username: String,
     pub is_admin: bool,
+}
+
+impl AuthenticatedUser {
+    /// Retourne une erreur `Forbidden` si l'utilisateur n'est pas administrateur.
+    pub fn require_admin(&self) -> AppResult<()> {
+        if self.is_admin {
+            Ok(())
+        } else {
+            Err(AppError::Forbidden)
+        }
+    }
 }
 
 impl From<JwtClaims> for AuthenticatedUser {
@@ -96,6 +110,24 @@ pub fn create_jwt(
 mod tests {
     use super::*;
     use jsonwebtoken::{decode, DecodingKey, Validation};
+
+    fn admin_user() -> AuthenticatedUser {
+        AuthenticatedUser { id: Uuid::new_v4(), username: "admin".to_string(), is_admin: true }
+    }
+
+    fn regular_user() -> AuthenticatedUser {
+        AuthenticatedUser { id: Uuid::new_v4(), username: "user".to_string(), is_admin: false }
+    }
+
+    #[test]
+    fn require_admin_allows_admin_user() {
+        assert!(admin_user().require_admin().is_ok());
+    }
+
+    #[test]
+    fn require_admin_rejects_regular_user() {
+        assert!(matches!(regular_user().require_admin(), Err(AppError::Forbidden)));
+    }
 
     #[test]
     fn create_jwt_produces_decodable_token_with_correct_claims() {

@@ -6,7 +6,7 @@ use axum::{
 use uuid::Uuid;
 
 use crate::{
-    error::{AppError, AppResult},
+    error::AppResult,
     middleware::auth::AuthenticatedUser,
     models::tag::{CreateTagRequest, Tag},
     repositories::tag_repository::TagRepository,
@@ -26,7 +26,7 @@ pub async fn create_tag(
     user: AuthenticatedUser,
     Json(payload): Json<CreateTagRequest>,
 ) -> AppResult<(StatusCode, Json<Tag>)> {
-    require_admin(&user)?;
+    user.require_admin()?;
 
     let repo = TagRepository::new(&state.pool);
     let tag = repo.create(&payload.name, &payload.slug).await?;
@@ -39,17 +39,10 @@ pub async fn delete_tag(
     user: AuthenticatedUser,
     Path(id): Path<Uuid>,
 ) -> AppResult<StatusCode> {
-    require_admin(&user)?;
+    user.require_admin()?;
 
     let repo = TagRepository::new(&state.pool);
     repo.delete(id).await?;
     Ok(StatusCode::NO_CONTENT)
 }
 
-fn require_admin(user: &AuthenticatedUser) -> AppResult<()> {
-    if user.is_admin {
-        Ok(())
-    } else {
-        Err(AppError::Forbidden)
-    }
-}

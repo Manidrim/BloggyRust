@@ -35,7 +35,7 @@ pub async fn create_article(
     user: AuthenticatedUser,
     Json(payload): Json<CreateArticleRequest>,
 ) -> AppResult<(StatusCode, Json<ArticleView>)> {
-    require_admin(&user)?;
+    user.require_admin()?;
     validate_create_payload(&payload)?;
 
     let repo = ArticleRepository::new(&state.pool);
@@ -67,7 +67,7 @@ pub async fn update_article(
     Path(slug): Path<String>,
     Json(payload): Json<UpdateArticleRequest>,
 ) -> AppResult<Json<ArticleView>> {
-    require_admin(&user)?;
+    user.require_admin()?;
 
     let repo = ArticleRepository::new(&state.pool);
     let existing = repo.find_by_slug(&slug).await?;
@@ -96,21 +96,13 @@ pub async fn delete_article(
     user: AuthenticatedUser,
     Path(slug): Path<String>,
 ) -> AppResult<StatusCode> {
-    require_admin(&user)?;
+    user.require_admin()?;
 
     let repo = ArticleRepository::new(&state.pool);
     let article = repo.find_by_slug(&slug).await?;
     repo.delete(article.id).await?;
 
     Ok(StatusCode::NO_CONTENT)
-}
-
-fn require_admin(user: &AuthenticatedUser) -> AppResult<()> {
-    if user.is_admin {
-        Ok(())
-    } else {
-        Err(AppError::Forbidden)
-    }
 }
 
 fn validate_create_payload(payload: &CreateArticleRequest) -> AppResult<()> {
@@ -235,16 +227,5 @@ mod tests {
         assert!(result.is_ok());
     }
 
-    // --- require_admin ---
-
-    #[test]
-    fn require_admin_allows_admin_user() {
-        assert!(require_admin(&admin_user()).is_ok());
-    }
-
-    #[test]
-    fn require_admin_rejects_regular_user() {
-        let result = require_admin(&regular_user());
-        assert!(matches!(result, Err(AppError::Forbidden)));
-    }
+    // Les tests de require_admin vivent désormais dans middleware::auth.
 }
