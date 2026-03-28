@@ -4,8 +4,8 @@
 
 ```
 BloggY/
-├── agent/                          # Documentation agent AI (ce dossier)
-├── agent.md                        # Point d'entrée de la documentation agent
+├── agents/                         # Documentation agent AI (ce dossier)
+├── AGENTS.md                       # Point d'entrée de la documentation agent
 ├── blog/                           # Application principale
 │   ├── .env                        # Variables d'environnement (ne pas committer)
 │   ├── .env.example                # Template des variables d'environnement
